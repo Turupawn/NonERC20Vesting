@@ -5,10 +5,56 @@ pragma solidity 0.8.11;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TokenTimelock is Ownable {
-  mapping(address=>uint) public coins;
+contract Vesting is Ownable {
+
+  uint public ENTRY_PRICE = 300 ether;
+  uint public COIN_REWARD = 1000 ether;
+
+  ERC20 busd = ERC20(0x0000000000000000000000000000000000000000);
+
+  mapping(address=>uint) public beneficiary_coins;
+
+  mapping(address=>bool) public whitelist;
+  mapping(address => bool) public is_beneficiary;
+
+  mapping(uint=>address) public beneficiaries;
+  uint public beneficiaries_count;
+
+  // Public Functions
+
   function buy() public
   {
-    coins[msg.sender] += 300;
+    require(whitelist[msg.sender], "You must be whitelisted.");
+    require(!is_beneficiary[msg.sender], "You already are a beneficiary.");
+    
+    is_beneficiary[msg.sender] = true;
+    beneficiary_coins[msg.sender] += COIN_REWARD;
+    beneficiaries_count += 1;
+
+    busd.transferFrom(msg.sender, address(this), ENTRY_PRICE);
+  }
+
+  // OWNER FUNCTIONS
+
+  function setCoinReward(uint coin_reward) public onlyOwner
+  {
+    COIN_REWARD = coin_reward;
+  }
+
+  function setEntryPrice(uint entry_price) public onlyOwner
+  {
+    ENTRY_PRICE = entry_price;
+  }
+
+  function editWhitelist(address[] memory addresses, bool value) public onlyOwner
+  {
+    for(uint i; i < addresses.length; i++){
+      whitelist[addresses[i]] = value;
+    }
+  }
+
+  function withdrawBUSD() public onlyOwner
+  {
+    busd.transfer(address(owner()), busd.balanceOf(address(this)));
   }
 }
