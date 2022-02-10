@@ -90,6 +90,7 @@ const onContractInitCallback = async () => {
   COIN_REWARD = await contract.methods.COIN_REWARD().call()
   user_is_whitelisted = await contract.methods.whitelist(accounts[0]).call()
   user_is_beneficiary = await contract.methods.is_beneficiary(accounts[0]).call()
+  user_coins = await contract.methods.beneficiary_coins(accounts[0]).call()
 
   console.log(user_is_whitelisted)
   console.log(user_is_beneficiary)
@@ -106,6 +107,8 @@ const onContractInitCallback = async () => {
     general_information_str += "<br>You are beneficiary"
   else
     general_information_str += "<br>You are not beneficiary"
+  
+  general_information_str += "<br>You have " + user_coins + " coins"
   
   document.getElementById("general_information").innerHTML = general_information_str
 }

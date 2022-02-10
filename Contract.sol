@@ -10,7 +10,7 @@ contract Vesting is Ownable {
   uint public ENTRY_PRICE = 300 ether;
   uint public COIN_REWARD = 1000 ether;
 
-  ERC20 busd = ERC20(0x0000000000000000000000000000000000000000);
+  ERC20 busd = ERC20(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56);
 
   mapping(address=>uint) public beneficiary_coins;
 
