@@ -69,10 +69,22 @@ async function loadDapp() {
         var awaitContract = async function () {
           contract = await getContract(web3, CONTRACT_ADDRESS, JSON_CONTRACT_ABI_PATH);
           busd_contract = await getContract(web3, BUSD_CONTRACT_ADDRESS, BUSD_JSON_CONTRACT_ABI_PATH);
-          await window.ethereum.request({ method: "eth_requestAccounts" })
-          accounts = await web3.eth.getAccounts()
           document.getElementById("web3_message").textContent="You are connected to Metamask"
           onContractInitCallback()
+          web3.eth.getAccounts(function(err, _accounts){
+            accounts = _accounts
+            if (err != null)
+            {
+              console.error("An error occurred: "+err)
+            } else if (accounts.length > 0)
+            {
+              onWalletConnected()
+              document.getElementById("account_address").style.display = "block"
+            } else
+            {
+              document.getElementById("connect_button").style.display = "block"
+            }
+          });
         };
         awaitContract();
       } else {
@@ -83,32 +95,41 @@ async function loadDapp() {
   awaitWeb3();
 }
 
+async function connectWallet() {
+  await window.ethereum.request({ method: "eth_requestAccounts" })
+  accounts = await web3.eth.getAccounts()
+  onWalletConnected()
+}
+
+const onWalletConnected = async () => {
+  console.log(accounts)
+
+  user_is_whitelisted = await contract.methods.whitelist(accounts[0]).call()
+  user_is_beneficiary = await contract.methods.is_beneficiary(accounts[0]).call()
+  user_coins = await contract.methods.beneficiary_coins(accounts[0]).call()
+
+  user_information = "<br>You have " + user_coins + " coins"
+  if(user_is_whitelisted)
+    user_information += "<br>You are whitelisted"
+  else
+    user_information += "<br>You are not whitelisted"
+
+  if(user_is_beneficiary)
+    user_information += "<br>You are beneficiary"
+  else
+    user_information += "<br>You are not beneficiary"
+  
+  document.getElementById("user_information").innerHTML = user_information
+}
+
 const onContractInitCallback = async () => {
   //user_coins = await contract.methods.coins(accounts[0]).call()
   //document.getElementById("coins").innerHTML = "You have " + user_coins + " coins"
   ENTRY_PRICE = await contract.methods.ENTRY_PRICE().call()
   COIN_REWARD = await contract.methods.COIN_REWARD().call()
-  user_is_whitelisted = await contract.methods.whitelist(accounts[0]).call()
-  user_is_beneficiary = await contract.methods.is_beneficiary(accounts[0]).call()
-  user_coins = await contract.methods.beneficiary_coins(accounts[0]).call()
-
-  console.log(user_is_whitelisted)
-  console.log(user_is_beneficiary)
 
   general_information_str = "Entry price: " + web3.utils.fromWei(ENTRY_PRICE) + " BUSD"
     + "<br>Coin reward: " + web3.utils.fromWei(COIN_REWARD) + " Tokens"
-  
-  if(user_is_whitelisted)
-    general_information_str += "<br>You are whitelisted"
-  else
-  general_information_str += "<br>You are not whitelisted"
-
-  if(user_is_beneficiary)
-    general_information_str += "<br>You are beneficiary"
-  else
-    general_information_str += "<br>You are not beneficiary"
-  
-  general_information_str += "<br>You have " + user_coins + " coins"
   
   document.getElementById("general_information").innerHTML = general_information_str
 }
